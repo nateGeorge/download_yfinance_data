@@ -1,9 +1,11 @@
 import os
+
 import wget
 import yfinance as yf
 from sqlalchemy import create_engine
 import pandas_market_calendars as cal
 import pandas as pd
+from tqdm import tqdm
 
 
 def chunks(l, n):
@@ -40,7 +42,7 @@ def download_stock_data(stocks=['QQQ', 'TQQQ', 'SQQQ'], db_file='stock_data.sqli
             start_dates[s] = None
 
     # TODO: group by start dates so we can multithread download
-    for s in stocks:
+    for s in tqdm(stocks):
         start = start_dates[s]
         if start is None or start.date() < today.date() and start.date() != end_date.date():
             # start is non-inclusive, end is inclusive
@@ -88,3 +90,7 @@ def load_data(ticker='QQQ'):
     current_data.sort_index(inplace=True)
     con.close()
     return current_data
+
+
+if __name__=="__main__":
+    download_stock_data()
