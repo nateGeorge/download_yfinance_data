@@ -34,28 +34,37 @@ def download_stock_data(stocks=['QQQ', 'TQQQ', 'SQQQ'], db_file='stock_data.sqli
         for s in stocks:
             res = con.execute('select max(Date) from data where ticker = "{}"'.format(s))
             date = pd.to_datetime(res.fetchone()[0])
-            start_dates[s] = None
+            start_dates[s] = pd.NaT
             if date is not None:
                 start_dates[s] = date
     else:
         for s in stocks:
-            start_dates[s] = None
+            start_dates[s] = pd.NaT
 
     # group by start dates so we can multithread download
     start_date_df = pd.DataFrame(data={'ticker': list(start_dates.keys()), 'start_date': list(start_dates.values())})
     unique_dates = start_date_df['start_date'].dt.date.unique()
     groups = []
     for udate in unique_dates:
-        tickers = start_date_df[start_date_df['start_date'] == pd.Timestamp(udate)]['ticker'].tolist()
+        if pd.isnull(udate):
+            tickers = start_date_df[pd.isnull(start_date_df['start_date'])]['ticker'].tolist()
+        else:
+            tickers = start_date_df[start_date_df['start_date'] == pd.Timestamp(udate)]['ticker'].tolist()
+
         groups.append(tickers)
 
 
     for start, grp in zip(unique_dates, groups):
-        if start is None or start < today.date() and start != end_date.date():
+        if pd.isnull(start) or start < today.date() and start != end_date.date():
             # start is non-inclusive, end is inclusive
+            if pd.isnull(start):
+                start = None
             data = yf.download(grp, auto_adjust=True, rounding=False, start=start, end=end_date)
-            data['ticker'] = s
-            data.to_sql(name='data', con=con, if_exists='append', index_label='date', method='multi')
+            for s in grp:
+                df = data.xs(s, level=1, axis=1).copy()
+                df.dropna(inplace=True)
+                df['ticker'] = s
+                df.to_sql(name='data', con=con, if_exists='append', index_label='date', method='multi')
         else:
             print('Stock group up to date, not downloading.')
 
