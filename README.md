@@ -10,7 +10,7 @@ You can also download the entire stocklist from NASDAQ, which is non recommended
 ipython
 
 import download_stocks as ds
-ds.download_stocklist() 
+ds.download_stocklist()
 
 # List of stocks
 Retrieved from here: ftp://ftp.nasdaqtrader.com/symboldirectory
@@ -21,5 +21,4 @@ Currently, yfinance is correcting the OHL for dividends by using the same ratio 
 
 # To do
 - Add other storage mechanisms (arctic db which uses MongoDB, postgresql, etc)
-- Group existing data by start data when fetching updates for multithreaded download
 - Error checking/testing

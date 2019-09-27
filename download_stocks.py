@@ -41,14 +41,23 @@ def download_stock_data(stocks=['QQQ', 'TQQQ', 'SQQQ'], db_file='stock_data.sqli
         for s in stocks:
             start_dates[s] = None
 
-    # TODO: group by start dates so we can multithread download
-    for s in tqdm(stocks):
-        start = start_dates[s]
-        if start is None or start.date() < today.date() and start.date() != end_date.date():
+    # group by start dates so we can multithread download
+    start_date_df = pd.DataFrame(data={'ticker': list(start_dates.keys()), 'start_date': list(start_dates.values())})
+    unique_dates = start_date_df['start_date'].dt.date.unique()
+    groups = []
+    for udate in unique_dates:
+        tickers = start_date_df[start_date_df['start_date'] == pd.Timestamp(udate)]['ticker'].tolist()
+        groups.append(tickers)
+
+
+    for start, grp in zip(unique_dates, groups):
+        if start is None or start < today.date() and start != end_date.date():
             # start is non-inclusive, end is inclusive
-            data = yf.download(s, auto_adjust=True, rounding=False, start=start, end=end_date)
+            data = yf.download(grp, auto_adjust=True, rounding=False, start=start, end=end_date)
             data['ticker'] = s
             data.to_sql(name='data', con=con, if_exists='append', index_label='date', method='multi')
+        else:
+            print('Stock group up to date, not downloading.')
 
     con.close()
 
