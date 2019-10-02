@@ -183,8 +183,8 @@ class downloader():
 
 
 class loader(downloader):
-    def __init__(self):
-        super().__init__(self)
+    def __init__(self, db='sqlite'):
+        super().__init__(self, db=db)
 
     def load_data(self, ticker='QQQ'):
         if self.db in ['sqlite']:
