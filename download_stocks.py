@@ -74,7 +74,8 @@ def download_stock_data(stocks=['QQQ', 'TQQQ', 'SQQQ'], db_file='stock_data.sqli
 def get_stocklists():
     link = 'ftp://ftp.nasdaqtrader.com/symboldirectory/{}.txt'
     for l in ['nasdaqlisted', 'otherlisted']:
-        os.remove('{}.txt'.format(l))
+        if os.path.exists(l):
+            os.remove('{}.txt'.format(l))
         wget.download(link.format(l))
 
     ndq = pd.read_csv('nasdaqlisted.txt', sep='|')
@@ -96,7 +97,7 @@ def download_stocklist():
     downloads all stocks from nasdaq lists
     """
     symbols = get_stocklists()
-    download_stocklist(symbols)
+    download_stock_data(symbols)
 
 
 def load_data(ticker='QQQ'):
