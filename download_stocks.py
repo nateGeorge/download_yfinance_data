@@ -130,7 +130,10 @@ class downloader():
                         df['ticker'] = s
                         dfs.append(df)
                     elif self.db == 'arctic':
-                        self.library.write(s, df)
+                        if start is None:
+                            self.library.write(s, df)
+                        else:
+                            self.library.append(s, df)
 
                 # store data in sql
                 if self.db in ['sqlite']:
