@@ -41,7 +41,7 @@ class downloader():
         if db == 'arctic':
             self.store = Arctic('localhost')
             self.store.initialize_library('yfinance_stockdata')
-            self.library = store['yfinance_stockdata']
+            self.library = self.store['yfinance_stockdata']
 
         self.stocks = stocks
 
@@ -51,11 +51,12 @@ class downloader():
         gets latest downloaded dates for all stocks in list;
         groups stocks by start date for multithreaded download
         """
+        print('getting start dates for existing data...')
         start_dates = {}
 
         if self.db == 'sqlite':
             if self.e.dialect.has_table(self.e, 'data'):
-                for s in self.stocks:
+                for s in tqdm(self.stocks):
                     res = self.con.execute('select max(Date) from data where ticker = "{}"'.format(s))
                     date = pd.to_datetime(res.fetchone()[0])
                     start_dates[s] = pd.NaT
@@ -66,13 +67,17 @@ class downloader():
                     start_dates[s] = pd.NaT
 
         elif self.db == 'arctic':
+            symbols_in_lib = set(self.library.list_symbols())
             for s in self.stocks:
-                item = self.library.read(s)
-                df = item.data
-                if df.shape[0] == 0:
-                    start_dates[s] = pd.NaT
+                if s in symbols_in_lib:
+                    item = self.library.read(s)
+                    df = item.data
+                    if df.shape[0] == 0:
+                        start_dates[s] = pd.NaT
+                    else:
+                        start_dates[s] = df.index.max()
                 else:
-                    start_dates[s] = df['Date'].max()
+                    start_dates[s] = pd.NaT
 
         # group by start dates so we can multithread download
         start_date_df = pd.DataFrame(data={'ticker': list(start_dates.keys()), 'start_date': list(start_dates.values())})
@@ -108,7 +113,18 @@ class downloader():
                 data = yf.download(grp, auto_adjust=True, rounding=False, start=start, end=end_date)
                 dfs = []
                 for s in grp:
-                    df = data.xs(s, level=1, axis=1).copy()
+                    try:
+                        df = data.xs(s, level=1, axis=1).copy()
+                    except AttributeError:
+                        df = data.copy()
+
+                    if 'Adj Close' in df.columns:
+                        df.drop(columns='Adj Close', inplace=True)
+
+                    # on error some dfs have 0 rows, but adj close column...ignore these
+                    if df.shape[0] == 0:
+                        continue
+
                     df.dropna(inplace=True)
                     if self.db in ['sqlite']:
                         df['ticker'] = s
@@ -116,10 +132,14 @@ class downloader():
                     elif self.db == 'arctic':
                         self.library.write(s, df)
 
-                # store data
+                # store data in sql
                 if self.db in ['sqlite']:
-                    full_df = pd.concat(dfs, axis=0)
-                    full_df.to_sql(name='data', con=self.con, if_exists='append', index_label='date', method='multi')
+                    print('writing data to sql db...')
+                    # write to db in chunks to avoid crashing on full memory
+                    # only seem to be able to write about 30k rows at once with sqlite3
+                    for c in tqdm(chunks(dfs, 100)):
+                        full_df = pd.concat(dfs, axis=0)
+                        full_df.to_sql(name='data', con=self.con, if_exists='append', index_label='date', method='multi', chunksize=30000)
 
 
             else:
