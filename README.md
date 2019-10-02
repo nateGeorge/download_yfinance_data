@@ -4,7 +4,7 @@ Downloads Yahoo Finance data with yfinance in Python.
 # Usage
 
 It's best to customize the list of stocks you want to download.  Change the list at the bottom of download_stocks.py.  Then run the file: `python download_stocks.py`.
-You can also download the entire stocklist from NASDAQ, although this is currently untested and I'm not sure if it will work, or how long it'll take.   To download all stocks, you can do:
+You can also download the entire stocklist from NASDAQ, which should take around 15 minutes to download the data, then another few minutes to store in a sqlite db.   To download all stocks, you can do:
 
 `ipython`
 
