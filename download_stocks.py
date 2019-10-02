@@ -74,8 +74,10 @@ def download_stock_data(stocks=['QQQ', 'TQQQ', 'SQQQ'], db_file='stock_data.sqli
 def get_stocklists():
     link = 'ftp://ftp.nasdaqtrader.com/symboldirectory/{}.txt'
     for l in ['nasdaqlisted', 'otherlisted']:
-        if os.path.exists(l):
-            os.remove('{}.txt'.format(l))
+        filename = '{}.txt'.format(l)
+        if os.path.exists(filename):
+            os.remove(filename)
+            
         wget.download(link.format(l))
 
     ndq = pd.read_csv('nasdaqlisted.txt', sep='|')
