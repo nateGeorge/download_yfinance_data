@@ -193,7 +193,8 @@ class loader(downloader):
             current_data.set_index('date', inplace=True)
             current_data.sort_index(inplace=True)
         elif self.db == 'arctic':
-            pass
+            item = self.library.read(ticker)
+            current_data = item.data
 
         return current_data
 
