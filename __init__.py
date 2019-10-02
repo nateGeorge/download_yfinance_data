@@ -1,3 +1,3 @@
 from download_stocks import *
 
-name = 'download-yfinance-data'
+name = 'download_yfinance_data'
