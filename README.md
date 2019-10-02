@@ -11,6 +11,7 @@ ipython
 
 import download_stocks as ds
 ds.download_stocklist()
+```
 
 # List of stocks
 Retrieved from here: ftp://ftp.nasdaqtrader.com/symboldirectory
