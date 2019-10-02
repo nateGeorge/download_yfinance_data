@@ -77,7 +77,7 @@ def get_stocklists():
         filename = '{}.txt'.format(l)
         if os.path.exists(filename):
             os.remove(filename)
-            
+
         wget.download(link.format(l))
 
     ndq = pd.read_csv('nasdaqlisted.txt', sep='|')
@@ -87,6 +87,9 @@ def get_stocklists():
     drop_idx = ndq[ndq['Symbol'].str.contains('File')].index
     ndq.drop(drop_idx, inplace=True)
     drop_idx = other[other['ACT Symbol'].str.contains('File')].index
+    other.drop(drop_idx, inplace=True)
+    # ignore preferred stocks
+    drop_idx = other[other['ACT Symbol'].str.contains('$')].index
     other.drop(drop_idx, inplace=True)
 
     symbols = ndq.Symbol.to_list() + other['ACT Symbol'].to_list()
